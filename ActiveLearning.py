@@ -75,14 +75,20 @@ def plotActiveLearner(accuracy_res_U, precision_res_U, recall_res_U, f1_res_U, h
     plt.show()
 
 
-def firstActiveLearner(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test, y_test):
+def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test, y_test, n):
     print("")
     print("Starting Active Learning...")
     print("")
     start = datetime.now()
+    query_strategy = entropy_sampling
+    if n == 1:
+        query_strategy = margin_sampling
+    elif n == 2:
+        query_strategy = uncertainty_sampling
     learner = ActiveLearner(estimator=OneVsRestClassifier(BernoulliNB(class_prior=None, alpha=.7)),
-                            query_strategy=margin_sampling,
+                            query_strategy=query_strategy,
                             X_training=x_train_actual, y_training=y_train_actual)
+
     y_pred = learner.predict(x_test)
     starting_res = multilabel_evaluation(y_pred, y_test)
     accuracy_res = [starting_res["accuracy"]]
@@ -95,14 +101,14 @@ def firstActiveLearner(x_train_actual, y_train_actual, x_holdout, y_holdout, x_t
         query_index, query_instance = learner.query(x_holdout)
 
         # Teach our ActiveLearner model the record it has requested.
-        print(query_index[0],len(x_holdout))
+       # print(query_index[0], len(x_holdout))
         X, y = x_holdout[query_index[0]].reshape(1, -1), y_holdout[query_index[0]].reshape(1, -1)
         learner.teach(X=X, y=y)
 
         # Remove the queried instance from the unlabeled pool.
         x_holdout, y_holdout = np.delete(x_holdout, query_index, axis=0), np.delete(y_holdout, query_index, axis=0)
 
-        print(index)
+       # print(index)
         if (index % 10) == 0:
             prediction = learner.predict(x_test)
             results = multilabel_evaluation(prediction, y_test)

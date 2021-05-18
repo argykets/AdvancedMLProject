@@ -255,4 +255,6 @@ if __name__ == "__main__":
 
     x_train, x_holdout, y_train, y_holdout = train_test_split(np.vstack(X_train.values), np.vstack(y_train.values),
                                                               random_state=0, test_size=0.9)
-    ActiveLearning.firstActiveLearner(x_train, y_train, x_holdout, y_holdout, X_test, y_test)
+    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,1)
+    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,2)
+    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,3)
