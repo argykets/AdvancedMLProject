@@ -252,7 +252,8 @@ if __name__ == "__main__":
     print("===================Classifier Chains F1 Scores====================")
     print(cc_f1)
     # plots.plotClassifierChains(br_clf_accuracies, br_clfus_accuracies, cc_accuracies, br_clf_f1, br_clfus_f1, cc_f1)
-
+    # x_train, x_holdout, y_train, y_holdout = train_test_split(X_train, y_train.values,
+    #                                                           random_state=0, test_size=0.9)
     x_train, x_holdout, y_train, y_holdout = train_test_split(np.vstack(X_train.values), np.vstack(y_train.values),
                                                               random_state=0, test_size=0.9)
     ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,1)

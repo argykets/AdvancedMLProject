@@ -1,11 +1,19 @@
 from datetime import datetime
 from modAL.models import ActiveLearner, Committee
+from modAL.multilabel import avg_confidence,avg_score,max_loss
 from modAL.uncertainty import uncertainty_sampling, margin_sampling, entropy_sampling
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.multiclass import OneVsRestClassifier
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
+from ClassifierChains import ClassifierChains
 
 
 def multilabel_evaluation(y_pred, y_test, measurement=None):
@@ -85,10 +93,13 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
         query_strategy = margin_sampling
     elif n == 2:
         query_strategy = uncertainty_sampling
-    learner = ActiveLearner(estimator=OneVsRestClassifier(BernoulliNB(class_prior=None, alpha=.7)),
-                            query_strategy=query_strategy,
-                            X_training=x_train_actual, y_training=y_train_actual)
 
+    learner = ActiveLearner(
+        estimator=LogisticRegression(),
+        query_strategy=query_strategy,
+        X_training=x_train_actual, y_training=y_train_actual
+    )
+    #
     y_pred = learner.predict(x_test)
     starting_res = multilabel_evaluation(y_pred, y_test)
     accuracy_res = [starting_res["accuracy"]]
@@ -101,14 +112,12 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
         query_index, query_instance = learner.query(x_holdout)
 
         # Teach our ActiveLearner model the record it has requested.
-       # print(query_index[0], len(x_holdout))
         X, y = x_holdout[query_index[0]].reshape(1, -1), y_holdout[query_index[0]].reshape(1, -1)
         learner.teach(X=X, y=y)
 
         # Remove the queried instance from the unlabeled pool.
         x_holdout, y_holdout = np.delete(x_holdout, query_index, axis=0), np.delete(y_holdout, query_index, axis=0)
 
-       # print(index)
         if (index % 10) == 0:
             prediction = learner.predict(x_test)
             results = multilabel_evaluation(prediction, y_test)
