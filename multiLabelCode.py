@@ -3,7 +3,6 @@ import pandas as pd
 import random
 import numpy as np
 import ActiveLearning
-import Plots as plots
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 
@@ -16,7 +15,7 @@ from sklearn.svm import SVC
 
 from sklearn.metrics import make_scorer
 from sklearn import metrics
-
+import Plots as plt
 # to avoid future warnings for sklearn
 import warnings
 
@@ -256,6 +255,9 @@ if __name__ == "__main__":
     #                                                           random_state=0, test_size=0.9)
     x_train, x_holdout, y_train, y_holdout = train_test_split(np.vstack(X_train.values), np.vstack(y_train.values),
                                                               random_state=0, test_size=0.9)
-    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,1)
-    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,2)
-    ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test,3)
+    f1 = ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 1)
+    f1_1 =ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 2)
+    f1_2 =ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 3)
+    f1_random =ActiveLearning.ActiveLearningRandom(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 3)
+#    plt.plotActiverOverAll(f1,f1_1,f1_2)
+    plt.randomSampling(f1_1,f1_random)

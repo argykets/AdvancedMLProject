@@ -1,19 +1,12 @@
 from datetime import datetime
-from modAL.models import ActiveLearner, Committee
-from modAL.multilabel import avg_confidence,avg_score,max_loss
+from modAL.models import ActiveLearner
 from modAL.uncertainty import uncertainty_sampling, margin_sampling, entropy_sampling
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.multiclass import OneVsRestClassifier
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-
-from ClassifierChains import ClassifierChains
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import BernoulliNB
 
 
 def multilabel_evaluation(y_pred, y_test, measurement=None):
@@ -81,8 +74,42 @@ def plotActiveLearner(accuracy_res_U, precision_res_U, recall_res_U, f1_res_U, h
     ax.set_ylabel('Classification Performance')
 
     plt.show()
+def random_sampling(classifier, X_pool):
+    n_samples = len(X_pool)
+    query_idx = np.random.choice(range(n_samples))
+    return query_idx, X_pool[query_idx]
 
+def ActiveLearningRandom(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test, y_test, n):
+    learner = ActiveLearner(
+        estimator=OneVsRestClassifier(BernoulliNB(class_prior=None, alpha=.7)),
+        query_strategy=random_sampling,
+        X_training=x_train_actual, y_training=y_train_actual)
+    #
+    y_pred = learner.predict(x_test)
+    starting_res = multilabel_evaluation(y_pred, y_test)
+    f1_res = [starting_res["f1_score"]]
+    N_QUERIES = 315
+    for index in range(N_QUERIES):
+        query_index, query_instance = learner.query(x_holdout)
 
+        # Teach our ActiveLearner model the record it has requested.
+        X, y = x_holdout[query_index].reshape(1, -1), y_holdout[query_index].reshape(1, -1)
+        learner.teach(X=X, y=y)
+
+        # Remove the queried instance from the unlabeled pool.
+        x_holdout, y_holdout = np.delete(x_holdout, query_index, axis=0), np.delete(y_holdout, query_index, axis=0)
+
+        if (index % 25) == 0:
+            prediction = learner.predict(x_test)
+            results = multilabel_evaluation(prediction, y_test)
+            f1_res.append(results["f1_score"])
+
+    prediction = learner.predict(x_test)
+    results = multilabel_evaluation(prediction, y_test)
+    print(results)
+    f1_res.append(results["f1_score"])
+
+    return f1_res
 def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test, y_test, n):
     print("")
     print("Starting Active Learning...")
@@ -95,10 +122,9 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
         query_strategy = uncertainty_sampling
 
     learner = ActiveLearner(
-        estimator=LogisticRegression(),
+        estimator=OneVsRestClassifier(BernoulliNB(class_prior=None, alpha=.7)),
         query_strategy=query_strategy,
-        X_training=x_train_actual, y_training=y_train_actual
-    )
+        X_training=x_train_actual, y_training=y_train_actual)
     #
     y_pred = learner.predict(x_test)
     starting_res = multilabel_evaluation(y_pred, y_test)
@@ -107,7 +133,7 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
     recall_res = [starting_res["recall"]]
     f1_res = [starting_res["f1_score"]]
     hamming_loss_res = [starting_res["hamming_loss"]]
-    N_QUERIES = 200
+    N_QUERIES = 315
     for index in range(N_QUERIES):
         query_index, query_instance = learner.query(x_holdout)
 
@@ -118,10 +144,9 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
         # Remove the queried instance from the unlabeled pool.
         x_holdout, y_holdout = np.delete(x_holdout, query_index, axis=0), np.delete(y_holdout, query_index, axis=0)
 
-        if (index % 10) == 0:
+        if (index % 25) == 0:
             prediction = learner.predict(x_test)
             results = multilabel_evaluation(prediction, y_test)
-            print(results)
 
             accuracy_res.append(results["accuracy"])
             precision_res.append(results["precision"])
@@ -138,5 +163,5 @@ def ActiveLearning(x_train_actual, y_train_actual, x_holdout, y_holdout, x_test,
     f1_res.append(results["f1_score"])
     hamming_loss_res.append(results["hamming_loss"])
     plotActiveLearner(accuracy_res, precision_res, recall_res, f1_res, hamming_loss_res)
-
     print('Finished active learning in : ', datetime.now() - start)
+    return f1_res
