@@ -31,7 +31,7 @@ class BinaryRelevanceClassifier(BaseEstimator, ClassifierMixin):
             # every classifier is independent of the others
             # hence we create a copy of the base classifier instance
             base_model = clone(self.base_classifier)
-            # fit the base model - one model each for Y1, Y2....Y14
+            # fit the base model - one model each for Y1, Y2....Y6
             basel_model = base_model.fit(x_checked, y_checked)
             # add the fitted model list of individual classifiers
             self.models.append(base_model)
