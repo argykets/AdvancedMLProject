@@ -76,3 +76,19 @@ def plotClassifierChains(br_clf_accuracies, br_clfus_accuracies, cc_accuracies, 
     plt.xticks(rotation=90)
     plt.legend(['Binary Relevance', 'BR-Under-Sampling', 'Classifier Chains'])
     plt.show()
+
+def plotClassifierChains1(cc_accuracies,cc_f1,cc_accuracies1,cc_f11):
+    plt.plot(list(cc_accuracies1.keys()), list(cc_accuracies1.values()))
+    plt.plot(list(cc_accuracies.keys()), list(cc_accuracies.values()))
+    plt.xticks(rotation=0)
+    plt.title("Accuracy")
+    plt.legend(['Classifier Chains with AL', 'Classifier Chains'])
+    plt.show()
+
+    plt.plot(list(cc_f11.keys()), list(cc_f11.values()))
+    plt.plot(list(cc_f1.keys()), list(cc_f1.values()))
+    plt.xticks(rotation=0)
+    plt.title("F1-score")
+    plt.legend(['Classifier Chains with AL', 'Classifier Chains'])
+    plt.show()
+

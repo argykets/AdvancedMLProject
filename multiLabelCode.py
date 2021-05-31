@@ -5,7 +5,7 @@ import numpy as np
 import ActiveLearning
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
-
+import Plots as plots
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -42,8 +42,8 @@ def preprocessing():
     features = y.columns
     print(features)
     print(y[features].sum())
-    # print('X shape:', X.shape)
-    # print('y shape:', y.shape)
+    print('X shape:', X.shape)
+    print('y shape:', y.shape)
 
     # Normalize data
     X = (X - X.min()) / (X.max() - X.min())
@@ -250,14 +250,46 @@ if __name__ == "__main__":
     print(cc_accuracies)
     print("===================Classifier Chains F1 Scores====================")
     print(cc_f1)
-    # plots.plotClassifierChains(br_clf_accuracies, br_clfus_accuracies, cc_accuracies, br_clf_f1, br_clfus_f1, cc_f1)
+    #plots.plotClassifierChains(br_clf_accuracies, br_clfus_accuracies, cc_accuracies, br_clf_f1, br_clfus_f1, cc_f1)
     # x_train, x_holdout, y_train, y_holdout = train_test_split(X_train, y_train.values,
     #                                                           random_state=0, test_size=0.9)
-    x_train, x_holdout, y_train, y_holdout = train_test_split(np.vstack(X_train.values), np.vstack(y_train.values),
+    x_train1, x_holdout, y_train1, y_holdout = train_test_split(np.vstack(X_train.values), np.vstack(y_train.values),
                                                               random_state=0, test_size=0.9)
-    f1 = ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 1)
-    f1_1 =ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 2)
-    f1_2 =ActiveLearning.ActiveLearning(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 3)
-    f1_random =ActiveLearning.ActiveLearningRandom(x_train, y_train, x_holdout, y_holdout, X_test, y_test, 3)
-#    plt.plotActiverOverAll(f1,f1_1,f1_2)
-    plt.randomSampling(f1_1,f1_random)
+    x_holdout1,y_holdout1,f1 = ActiveLearning.ActiveLearning(x_train1, y_train1, x_holdout, y_holdout, X_test, y_test, 1)
+    #f1_1 =ActiveLearning.ActiveLearning(x_train1, y_train1, x_holdout, y_holdout, X_test, y_test, 2)
+    #f1_2 =ActiveLearning.ActiveLearning(x_train1, y_train1, x_holdout, y_holdout, X_test, y_test, 3)
+    #f1_random =ActiveLearning.ActiveLearningRandom(x_train1, y_train1, x_holdout, y_holdout, X_test, y_test, 3)
+    #plt.plotActiverOverAll(f1,f1_1,f1_2)
+    #plt.randomSampling(f1_1,f1_random)
+
+    cc_accuracies1 = dict()
+    cc_f11 = dict()
+    i = 0
+    base_models = [DecisionTreeClassifier(criterion='entropy', max_depth=15, min_samples_leaf=2),
+                   RandomForestClassifier(criterion='entropy'),
+                   LogisticRegression(max_iter=20000), GaussianNB(), KNeighborsClassifier(), SVC()]
+    base_model_names = ["Decision Tree", "Random Forest", "Logistic Regression", "GaussianNB", "kNN", "SVM"]
+    x_train1, y_train1 = np.concatenate((x_train1, x_holdout1)),np.concatenate((y_train1, y_holdout1))
+
+    for clf in base_models:
+        cc = ClassifierChains(clf, order=[6, 4, 3, 2, 5, 1])
+        #cc.fit(X_train, y_train)
+        dfX = pd.DataFrame(x_train1)
+        dfy = pd.DataFrame(y_train1,columns=['class1', 'class2', 'class3', 'class4', 'class5', 'class6'])
+
+        dfy = dfy.astype(int) # convert all columns of DataFrame
+
+        cc.fit(dfX,dfy)
+        cc_pred = cc.predict(X_test)
+        # accuracy score
+        accuracy = accuracy_score(y_test, cc_pred)
+        cc_accuracies1[base_model_names[i]] = accuracy
+        # F1 score
+        cc_f1_score = metrics.f1_score(y_test, pd.DataFrame(cc_pred), average='macro')
+        cc_f11[base_model_names[i]] = cc_f1_score
+        i += 1
+    print("====================Classifier Chains Accuracy====================")
+    print(cc_accuracies1)
+    print("===================Classifier Chains F1 Scores====================")
+    print(cc_f11)
+    plots.plotClassifierChains1(cc_accuracies,cc_f1,cc_accuracies1,cc_f11)
